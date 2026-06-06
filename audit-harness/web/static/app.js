@@ -542,7 +542,12 @@
       els.sessionBreadcrumb.textContent = truncate(state.currentSessionTitle, 40) || 'Session ' + sid.substring(0, 8);
       if (data.chain && data.chain.final_output) {
         renderResults(data.chain);
-        renderSummaryDashboard(data.chain);
+        renderSummaryDashboard({
+          chain: data.chain,
+          total_iterations: data.chain.total_iterations,
+          early_stopped: data.chain.early_stopped,
+          referenced_files: data.chain.referenced_files
+        });
       }
       if (data.chain && data.chain.steps) {
         renderTimeline(data.chain.steps);
