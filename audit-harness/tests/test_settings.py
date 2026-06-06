@@ -72,7 +72,7 @@ def test_settings_kill_on_violation_is_bool():
 def test_settings_file_char_cap_is_int():
     from config.settings import settings
     assert isinstance(settings.FILE_CHAR_CAP, int)
-    assert settings.FILE_CHAR_CAP > 0
+    assert settings.FILE_CHAR_CAP >= 0
 
 
 def test_settings_file_row_cap_is_int():
@@ -152,3 +152,22 @@ def test_to_dict_masks_api_key():
     assert "LLM_API_KEY" in d
     api_val = d["LLM_API_KEY"]
     assert api_val == "****" or "****" in api_val
+
+
+def test_evaluator_fields_exist():
+    from config.settings import settings
+    assert hasattr(settings, "EVALUATOR_MODEL")
+    assert hasattr(settings, "EVALUATOR_ENDPOINT")
+    assert hasattr(settings, "EVALUATOR_API_KEY")
+    assert settings.EVALUATOR_MODEL == ""
+    assert settings.EVALUATOR_ENDPOINT == ""
+
+
+def test_to_dict_masks_evaluator_api_key():
+    from config.settings import settings
+    settings.EVALUATOR_API_KEY = "sk-secret-12345"
+    d = settings.to_dict()
+    assert "EVALUATOR_API_KEY" in d
+    ev_val = d["EVALUATOR_API_KEY"]
+    assert "****" in ev_val
+    settings.EVALUATOR_API_KEY = ""

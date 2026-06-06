@@ -1,4 +1,5 @@
 import logging
+import sys
 from pathlib import Path, PurePath
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ def _validate_filename(filename: str) -> str:
 
 def _read_text(path: Path, char_cap: int) -> str:
     with open(path, "r", encoding="utf-8") as f:
-        content = f.read(char_cap)
+        content = f.read() if char_cap >= sys.maxsize else f.read(char_cap)
     return content
 
 
@@ -120,5 +121,8 @@ def read_file(folder_path: str, filename: str) -> dict:
         content = _read_pdf(full_path, char_cap)
     else:
         raise ValueError(f"Unsupported file extension: {ext}")
+
+    if len(content) > 100_000:
+        logger.warning("File '%s' is %d characters — this may consume significant token quota.", filename, len(content))
 
     return {"filename": filename, "content": content}

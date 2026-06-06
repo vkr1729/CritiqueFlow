@@ -7,3 +7,4 @@ exports/
 .pytest_cache/
 *.egg-info/
 data/
+.port

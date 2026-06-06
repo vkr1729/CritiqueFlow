@@ -58,7 +58,7 @@ def _extract_json(response_text: str) -> dict:
 
 
 def evaluate_response(original_query: str, llm_response: str, iteration: int, prior_steps: list) -> dict:
-    from core.llm_client import call_llm_raw
+    from core.llm_client import call_llm
 
     prior_summary = ""
     if prior_steps:
@@ -67,16 +67,18 @@ def evaluate_response(original_query: str, llm_response: str, iteration: int, pr
         for step in recent:
             prior_summary += f"- [{step['role']}] (iteration {step['iteration']}): {step['content'][:300]}\n"
 
-    prompt = (
-        f"{get_evaluator_criteria()}\n\n"
-        f"=== ORIGINAL QUERY ===\n"
-        f"{original_query}\n\n"
-        f"=== CURRENT LLM RESPONSE (Iteration {iteration}) ===\n"
-        f"{llm_response}"
-        f"{prior_summary}\n"
-    )
+    messages = [
+        {"role": "system", "content": get_evaluator_criteria()},
+        {"role": "user", "content": (
+            f"=== ORIGINAL QUERY ===\n"
+            f"{original_query}\n\n"
+            f"=== CURRENT LLM RESPONSE (Iteration {iteration}) ===\n"
+            f"{llm_response}"
+            f"{prior_summary}"
+        )},
+    ]
 
-    raw = call_llm_raw(prompt)
+    raw = call_llm(messages, client_type="evaluator", response_format={"type": "json_object"})
     parsed = _extract_json(raw)
 
     for key in REQUIRED_KEYS:

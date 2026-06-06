@@ -3,61 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Model Risk Audit Harness</title>
+<meta name="description" content="AI-powered iterative audit harness with built-in critique loops.">
+<title>CritiqueFlow — Audit Harness</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<header>
-  <div id="header-title">Model Risk Audit Harness</div>
-  <div id="status-dot"></div>
+<header id="app-header">
+  <div class="header-left">
+    <svg class="logo-icon" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L22 7v10l-10 5-10-5V7Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      <circle cx="9" cy="10.5" r="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <line x1="11.2" y1="12.7" x2="15" y2="16.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    <span class="logo-wordmark">CritiqueFlow</span>
+  </div>
+  <div class="header-center">
+    <span id="session-breadcrumb" class="breadcrumb">New Session</span>
+  </div>
+  <div class="header-right">
+    <span id="status-dot" class="status-dot"></span>
+    <span id="model-name" class="model-label"></span>
+  </div>
 </header>
 
 <div id="app-layout">
   <aside id="sidebar">
-    <div id="sidebar-tabs">
-      <button class="tab-btn active" data-tab="files">Files</button>
-      <button class="tab-btn" data-tab="history">History</button>
-      <button class="tab-btn" data-tab="settings">Settings</button>
-    </div>
+    <button id="sidebar-collapse-toggle" class="panel-toggle" title="Collapse sidebar">&laquo;</button>
+    <div class="sidebar-content">
+      <div id="sidebar-tabs">
+        <button class="tab-btn active" data-tab="workspace">Workspace</button>
+        <button class="tab-btn" data-tab="configure">Configure</button>
+      </div>
 
-    <div id="tab-files" class="tab-panel active">
-      <section id="folder-section">
-        <label for="folder-path">Working Folder</label>
-        <div class="input-row">
-          <input type="text" id="folder-path" placeholder="/absolute/path/to/folder">
-          <button id="btn-load-files">Load</button>
-        </div>
-      </section>
-      <section id="file-list-section">
-        <h3>Available Files</h3>
-        <div id="file-list"></div>
-      </section>
-    </div>
+      <div id="tab-workspace" class="tab-panel active">
+        <section id="folder-section">
+          <label for="folder-path">Working Folder</label>
+          <div class="input-row">
+            <input type="text" id="folder-path" placeholder="/absolute/path/to/folder">
+            <button id="btn-load-files">Load</button>
+          </div>
+        </section>
+        <section id="file-list-section">
+          <h3>Reference Documents</h3>
+          <div id="file-list"></div>
+        </section>
+        <hr class="sidebar-divider">
+        <section id="history-section">
+          <h3>Session History</h3>
+          <div id="session-list"></div>
+          <button id="btn-clear-history" class="btn-danger">Clear All History</button>
+        </section>
+      </div>
 
-    <div id="tab-history" class="tab-panel">
-      <div id="session-list"></div>
-      <button id="btn-clear-history" class="btn-danger">Clear All History</button>
-    </div>
-
-    <div id="tab-settings" class="tab-panel">
-      <div id="settings-subtabs">
-        <button class="subtab-btn active" data-subtab="env">Environment</button>
-        <button class="subtab-btn" data-subtab="prompt-auditor">Auditor</button>
-        <button class="subtab-btn" data-subtab="prompt-evaluator">Evaluator</button>
-        <button class="subtab-btn" data-subtab="skills">Skills</button>
-      </div>
-      <div id="subtab-env" class="subtab-panel active">
-        <div id="env-editor"></div>
-      </div>
-      <div id="subtab-prompt-auditor" class="subtab-panel">
-        <textarea id="prompt-auditor-editor" rows="20" placeholder="Loading..."></textarea>
-      </div>
-      <div id="subtab-prompt-evaluator" class="subtab-panel">
-        <textarea id="prompt-evaluator-editor" rows="20" placeholder="Loading..."></textarea>
-      </div>
-      <div id="subtab-skills" class="subtab-panel">
-        <button id="btn-learn-skills">Learn from History</button>
-        <div id="skills-list"></div>
+      <div id="tab-configure" class="tab-panel">
+        <details class="config-section" open>
+          <summary>Environment</summary>
+          <div id="env-editor"></div>
+        </details>
+        <details class="config-section">
+          <summary>Auditor Prompt</summary>
+          <textarea id="prompt-auditor-editor" rows="20" placeholder="Loading..."></textarea>
+        </details>
+        <details class="config-section">
+          <summary>Evaluator Prompt</summary>
+          <textarea id="prompt-evaluator-editor" rows="20" placeholder="Loading..."></textarea>
+        </details>
+        <details class="config-section">
+          <summary>Learned Skills</summary>
+          <button id="btn-learn-skills">Learn from History</button>
+          <div id="skills-list"></div>
+        </details>
       </div>
     </div>
   </aside>
@@ -66,30 +81,58 @@
     <section id="query-section">
       <label for="query-input">Audit Query</label>
       <textarea id="query-input" rows="4" placeholder="Enter your audit question here..."></textarea>
-      <button id="btn-run-harness">Run Harness</button>
-      <div id="loading-spinner" class="hidden"></div>
+      <div class="query-actions">
+        <button id="btn-run-harness">Run Audit</button>
+        <div id="loading-bar" class="hidden"></div>
+      </div>
       <div id="query-error" class="error-msg hidden"></div>
       <div id="export-success" class="success-msg hidden"></div>
     </section>
 
+    <section id="summary-dashboard" class="hidden">
+      <div class="metric-card" id="metric-confidence">
+        <span class="metric-value" id="confidence-value">&mdash;</span>
+        <span class="metric-label">Confidence</span>
+      </div>
+      <div class="metric-card" id="metric-iterations">
+        <span class="metric-value" id="iterations-value">&mdash;</span>
+        <span class="metric-label">Iterations</span>
+      </div>
+      <div class="metric-card" id="metric-verdict">
+        <span class="metric-value" id="verdict-value">&mdash;</span>
+        <span class="metric-label">Verdict</span>
+      </div>
+      <div class="metric-card" id="metric-files">
+        <span class="metric-value" id="files-value">&mdash;</span>
+        <span class="metric-label">Files Referenced</span>
+      </div>
+    </section>
+
     <section id="results-section" class="hidden">
       <div id="results-header">
-        <h2>Results</h2>
+        <h2>Audit Results</h2>
         <div id="results-meta"></div>
         <button id="btn-export">Export Markdown</button>
       </div>
       <div id="results-content"></div>
     </section>
-
-    <section id="chain-section" class="hidden">
-      <h2>Interaction Chain</h2>
-      <div id="chain-viewer"></div>
-    </section>
   </main>
+
+  <aside id="chain-panel">
+    <button id="chain-collapse-toggle" class="panel-toggle" title="Collapse chain viewer" aria-controls="chain-panel">&raquo;</button>
+    <div class="chain-content">
+      <h2 class="chain-title">Reasoning Chain</h2>
+      <div id="chain-viewer"></div>
+    </div>
+    <div class="chain-collapsed-indicator">
+      <span id="mini-confidence" class="mini-badge">&mdash;</span>
+    </div>
+  </aside>
 </div>
 
 <footer>
   <span id="footer-status">Ready</span>
+  <span class="footer-version">v1.0</span>
 </footer>
 
 <script src="/static/app.js"></script>

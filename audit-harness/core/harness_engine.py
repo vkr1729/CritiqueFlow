@@ -102,10 +102,15 @@ def run_harness(user_query: str, file_contents: dict = None,
         if not follow_up:
             follow_up = "Please provide more specific detail with concrete examples, quantitative thresholds, and regulatory references."
 
-        chain.add_step("harness_followup", follow_up, iteration)
+        framed_challenge = (
+            "The Audit Committee reviewed your draft and returned the following challenge: "
+            f"{follow_up} "
+            "Please revise your workpaper to address this."
+        )
+        chain.add_step("harness_followup", framed_challenge, iteration)
 
         messages.append({"role": "assistant", "content": llm_response})
-        messages.append({"role": "user", "content": follow_up})
+        messages.append({"role": "user", "content": framed_challenge})
     else:
         chain.final_output = llm_response
         chain.early_stopped = False

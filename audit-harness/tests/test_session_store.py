@@ -14,6 +14,7 @@ def clean_db(monkeypatch, tmp_path):
     db_path = tmp_path / "test_sessions.db"
     monkeypatch.setattr("core.session_store._DB_PATH", db_path)
     monkeypatch.setattr("core.session_store._DB_DIR", tmp_path)
+    monkeypatch.setattr("core.session_store._local.connection", None)
     init_db()
 
 

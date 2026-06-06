@@ -42,7 +42,7 @@ def test_evaluate_response_sufficient():
         "reasoning": "Comprehensive and specific."
     })
 
-    with patch("core.llm_client.call_llm_raw", return_value=evaluator_json):
+    with patch("core.llm_client.call_llm", return_value=evaluator_json):
         result = evaluate_response(
             "Audit the VaR model",
             "The VaR model uses historical simulation...",
@@ -67,7 +67,7 @@ def test_evaluate_response_insufficient():
         "reasoning": "Missing regulatory grounding."
     })
 
-    with patch("core.llm_client.call_llm_raw", return_value=evaluator_json):
+    with patch("core.llm_client.call_llm", return_value=evaluator_json):
         result = evaluate_response(
             "Audit VaR model",
             "Generic response...",
@@ -91,15 +91,18 @@ def test_evaluate_response_prior_steps_in_prompt():
         {"role": "llm_response", "iteration": 1, "content": "Prior response content here."},
     ]
 
-    with patch("core.llm_client.call_llm_raw") as mock_llm:
+    with patch("core.llm_client.call_llm") as mock_llm:
         mock_llm.return_value = evaluator_json
         evaluate_response("test query", "current response", 2, prior)
 
         call_args = mock_llm.call_args[0][0]
-        assert "test query" in call_args
-        assert "current response" in call_args
-        assert "Prior steps" in call_args
-        assert "Prior response content" in call_args
+        user_messages = [m for m in call_args if m["role"] == "user"]
+        system_messages = [m for m in call_args if m["role"] == "system"]
+        assert len(system_messages) > 0
+        assert any("test query" in m["content"] for m in user_messages)
+        assert any("current response" in m["content"] for m in user_messages)
+        assert any("Prior steps" in m["content"] for m in user_messages)
+        assert any("Prior response content" in m["content"] for m in user_messages)
 
 
 def test_prompt_file_loaded():

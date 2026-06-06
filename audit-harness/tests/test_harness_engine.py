@@ -31,7 +31,7 @@ def test_max_depth_exhaustion():
     with patch("core.harness_engine.call_llm", return_value="Generic model response."), \
          patch("core.harness_engine.evaluate_response", return_value=insufficient):
         chain = run_harness("Audit VaR model.")
-        assert chain.total_iterations == 3
+        assert chain.total_iterations == 2
         assert chain.early_stopped is False
         assert len(chain.steps) > 3
 
@@ -66,7 +66,7 @@ def test_confidence_below_threshold_continues():
     with patch("core.harness_engine.call_llm", return_value="Shallow analysis."), \
          patch("core.harness_engine.evaluate_response", return_value=low_confidence):
         chain = run_harness("Audit model.")
-        assert chain.total_iterations == 3
+        assert chain.total_iterations == 2
 
 
 def test_file_context_injection():
@@ -151,4 +151,4 @@ def test_last_iteration_convergence():
          patch("core.harness_engine.evaluate_response", side_effect=mock_evaluate):
         chain = run_harness("Test.")
         assert chain.total_iterations == 2
-        assert chain.early_stopped is True
+        assert chain.early_stopped is False

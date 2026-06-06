@@ -87,3 +87,71 @@ def test_extract_content_anthropic():
     body = json.dumps({"content": [{"text": "anthropic output"}]})
     result = _extract_content(body)
     assert result == "anthropic output"
+
+
+def test_call_llm_evaluator_client_type_uses_evaluator_endpoint():
+    with patch("urllib.request.urlopen") as mock:
+        mock_response = MagicMock()
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=False)
+        mock_response.read.return_value = json.dumps({
+            "choices": [{"message": {"content": "evaluator output"}}]
+        }).encode("utf-8")
+        mock.return_value = mock_response
+
+        from config.settings import settings
+        settings.EVALUATOR_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
+        settings.EVALUATOR_API_KEY = "gsk_secret_evaluator_key"
+        settings.EVALUATOR_MODEL = "llama-3.3-70b"
+
+        result = call_llm([{"role": "user", "content": "Evaluate this."}], client_type="evaluator")
+
+        assert "evaluator output" in result
+        req = mock.call_args[0][0]
+        assert "api.groq.com" in req.full_url
+        assert "Bearer gsk_secret_evaluator_key" in req.headers.get("Authorization", "")
+
+        settings.EVALUATOR_ENDPOINT = ""
+        settings.EVALUATOR_API_KEY = ""
+        settings.EVALUATOR_MODEL = ""
+
+
+def test_call_llm_evaluator_falls_back_to_generator():
+    with patch("urllib.request.urlopen") as mock:
+        mock_response = MagicMock()
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=False)
+        mock_response.read.return_value = json.dumps({
+            "choices": [{"message": {"content": "fallback output"}}]
+        }).encode("utf-8")
+        mock.return_value = mock_response
+
+        from config.settings import settings
+        settings.EVALUATOR_ENDPOINT = ""
+        settings.EVALUATOR_API_KEY = ""
+        settings.EVALUATOR_MODEL = ""
+
+        result = call_llm([{"role": "user", "content": "Evaluate this."}], client_type="evaluator")
+
+        assert "fallback output" in result
+        req = mock.call_args[0][0]
+        assert settings.LLM_ENDPOINT in req.full_url
+
+
+def test_call_llm_includes_response_format():
+    with patch("urllib.request.urlopen") as mock:
+        mock_response = MagicMock()
+        mock_response.__enter__ = MagicMock(return_value=mock_response)
+        mock_response.__exit__ = MagicMock(return_value=False)
+        mock_response.read.return_value = json.dumps({
+            "choices": [{"message": {"content": "structured output"}}]
+        }).encode("utf-8")
+        mock.return_value = mock_response
+
+        result = call_llm([{"role": "user", "content": "Test."}],
+                          response_format={"type": "json_object"})
+
+        assert "structured output" in result
+        req = mock.call_args[0][0]
+        body = json.loads(req.data.decode("utf-8"))
+        assert body.get("response_format") == {"type": "json_object"}

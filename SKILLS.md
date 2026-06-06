@@ -116,6 +116,15 @@ pytest>=8.0
 - Basic markdown-to-HTML rendering in JS (bold, italic, code, headers, lists, line breaks).
   Support `**bold**`, `*italic*`, `` `code` ``, `### headers`, `- lists`, `\n` → `<br>`.
 
+### Phase 4 Exceptions (Self-Hosted Assets)
+
+The following assets are bundled locally in `web/static/` — zero external network requests:
+
+1. **Inter font** — Self-hosted woff2 files in `web/static/fonts/`. 4 weights (Regular 400, Medium 500, SemiBold 600, Bold 700). ~90KB total. Licensed MIT.
+2. **Inline SVG logo** — A shield + magnifying glass icon rendered inline in `index.html`. No external image files.
+
+These do NOT violate the "zero external resources" rule — they are local assets served from the Flask static directory.
+
 ---
 
 ## 📐 Configuration via .env

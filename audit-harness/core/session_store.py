@@ -1,6 +1,7 @@
 import json
 import sqlite3
 import logging
+import threading
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -8,6 +9,7 @@ logger = logging.getLogger(__name__)
 
 _DB_DIR = Path(__file__).parent.parent / "data"
 _DB_PATH = _DB_DIR / "sessions.db"
+_local = threading.local()
 
 
 def init_db() -> str:
@@ -41,10 +43,13 @@ def init_db() -> str:
 
 
 def _get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(_DB_PATH))
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
+    conn = getattr(_local, "connection", None)
+    if conn is None:
+        conn = sqlite3.connect(str(_DB_PATH), check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+        _local.connection = conn
     return conn
 
 

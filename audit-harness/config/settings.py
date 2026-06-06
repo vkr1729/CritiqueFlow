@@ -3,6 +3,7 @@ import re
 import sys
 import logging
 from dataclasses import dataclass, field
+from urllib.parse import urlparse
 from dotenv import load_dotenv, find_dotenv
 
 logger = logging.getLogger(__name__)
@@ -13,18 +14,21 @@ class Settings:
     LLM_ENDPOINT: str = ""
     LLM_API_KEY: str = ""
     LLM_MODEL: str = "gemini-2.0-flash"
+    EVALUATOR_MODEL: str = ""
+    EVALUATOR_ENDPOINT: str = ""
+    EVALUATOR_API_KEY: str = ""
     LLM_TEMPERATURE: float = 0.3
     LLM_TOP_P: float = 0.9
     LLM_TOP_K: int = 40
     LLM_MAX_TOKENS: int = 8192
-    MAX_ITERATION_DEPTH: int = 3
+    MAX_ITERATION_DEPTH: int = 2
     EARLY_STOP_CONFIDENCE: float = 0.85
     HOST: str = "127.0.0.1"
     PORT: int = 5000
     ALLOWED_OUTBOUND_HOSTS: list[str] = field(default_factory=lambda: ["generativelanguage.googleapis.com"])
     KILL_ON_VIOLATION: bool = True
     ENABLE_NETWORK_GUARD: bool = True
-    FILE_CHAR_CAP: int = 50000
+    FILE_CHAR_CAP: int = 0
     FILE_ROW_CAP: int = 100
     MAX_SESSION_HISTORY: int = 100
 
@@ -53,6 +57,10 @@ class Settings:
             env_val = os.getenv(field_name)
             if env_val is not None and env_val != "":
                 setattr(self, field_name, self._cast(field_name, env_val))
+        if self.EVALUATOR_ENDPOINT:
+            parsed = urlparse(self.EVALUATOR_ENDPOINT)
+            if parsed.hostname and parsed.hostname not in self.ALLOWED_OUTBOUND_HOSTS:
+                self.ALLOWED_OUTBOUND_HOSTS.append(parsed.hostname)
         self.ALLOWED_OUTBOUND_HOSTS = _hosts_with_loopback(self.ALLOWED_OUTBOUND_HOSTS)
 
     def reload(self):
@@ -61,6 +69,10 @@ class Settings:
             env_val = os.getenv(field_name)
             if env_val is not None and env_val != "":
                 setattr(self, field_name, self._cast(field_name, env_val))
+        if self.EVALUATOR_ENDPOINT:
+            parsed = urlparse(self.EVALUATOR_ENDPOINT)
+            if parsed.hostname and parsed.hostname not in self.ALLOWED_OUTBOUND_HOSTS:
+                self.ALLOWED_OUTBOUND_HOSTS.append(parsed.hostname)
         self.ALLOWED_OUTBOUND_HOSTS = _hosts_with_loopback(self.ALLOWED_OUTBOUND_HOSTS)
 
     def update_field(self, field_name: str, value: str):

@@ -1,4 +1,7 @@
+import atexit
 import logging
+import socket
+from pathlib import Path
 
 logging.basicConfig(
     level=logging.INFO,
@@ -6,6 +9,19 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+
+def find_available_port(host, start, end):
+    for port in range(start, end + 1):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            sock.bind((host, port))
+            sock.close()
+            return port
+        except OSError:
+            sock.close()
+            continue
+    raise RuntimeError(f"No available port in range {start}-{end}")
 
 
 def main():
@@ -23,11 +39,26 @@ def main():
     from core.session_store import init_db
     init_db()
 
+    configured_port = settings.PORT
+    actual_port = find_available_port(settings.HOST, configured_port, configured_port + 10)
+
+    if actual_port != configured_port:
+        logger.warning("Port %d in use, using %d instead", configured_port, actual_port)
+
+    port_file = Path(__file__).parent / ".port"
+    port_file.write_text(str(actual_port), encoding="utf-8")
+
+    def cleanup():
+        port_file.unlink(missing_ok=True)
+        logger.debug("Cleanup: removed .port file")
+
+    atexit.register(cleanup)
+
     from web.app import create_app
     app = create_app()
 
-    logger.info("Starting server on %s:%d", settings.HOST, settings.PORT)
-    app.run(host=settings.HOST, port=settings.PORT, debug=False)
+    logger.info("Starting server on %s:%d", settings.HOST, actual_port)
+    app.run(host=settings.HOST, port=actual_port, debug=False)
 
 
 if __name__ == "__main__":

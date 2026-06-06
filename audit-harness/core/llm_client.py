@@ -12,30 +12,42 @@ RETRY_DELAY_SECONDS = 2
 RETRYABLE_STATUSES = {429}
 
 
-def call_llm(messages: list[dict]) -> str:
+def call_llm(messages: list[dict], client_type: str = "generator", response_format: dict = None) -> str:
     from config.settings import settings
 
+    if client_type == "evaluator":
+        endpoint = settings.EVALUATOR_ENDPOINT or settings.LLM_ENDPOINT
+        api_key = settings.EVALUATOR_API_KEY or settings.LLM_API_KEY
+        model = settings.EVALUATOR_MODEL or settings.LLM_MODEL
+    else:
+        endpoint = settings.LLM_ENDPOINT
+        api_key = settings.LLM_API_KEY
+        model = settings.LLM_MODEL
+
     payload = {
-        "model": settings.LLM_MODEL,
+        "model": model,
         "messages": messages,
         "temperature": settings.LLM_TEMPERATURE,
         "top_p": settings.LLM_TOP_P,
         "max_tokens": settings.LLM_MAX_TOKENS,
     }
 
+    if response_format is not None:
+        payload["response_format"] = response_format
+
     # Only include top_k if it's set and the endpoint is not an OpenAI-compatible one
-    is_openai_compat = "/openai/" in settings.LLM_ENDPOINT or "/chat/completions" in settings.LLM_ENDPOINT
+    is_openai_compat = "/openai/" in endpoint or "/chat/completions" in endpoint
     if not is_openai_compat and settings.LLM_TOP_K is not None:
         payload["top_k"] = settings.LLM_TOP_K
 
 
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
-        settings.LLM_ENDPOINT,
+        endpoint,
         data=data,
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {settings.LLM_API_KEY}",
+            "Authorization": f"Bearer {api_key}",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         },
         method="POST",
