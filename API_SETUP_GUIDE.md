@@ -172,7 +172,7 @@ except:
 # 3. Test full harness flow (if both tests above pass)
 python -c "
 from core.harness_engine import run_harness
-chain = run_harness('What are the key risks in a Hull-White one-factor interest rate model used for CVA computation?')
+chain = run_harness('Assess the access control evidence in the attached SOX testing documentation')
 print(f'✅ Harness completed: {chain.total_iterations} iterations, early_stopped={chain.early_stopped}')
 print(f'Final output preview: {chain.final_output[:200]}...')
 "
