@@ -1,0 +1,14 @@
+# AI Orchestration state files
+GEMINI.md
+CLAUDE.md
+AGENTS.md
+implementation_plan.md
+success_criteria.md
+antigravity-init.sh
+build_and_test.sh
+REVIEW_PROMPT_TEMPLATE.md
+IMPL_CHANGES.diff
+TEST_REPORT.md
+.review_output.md
+.review_prompt_hydrated.md
+
